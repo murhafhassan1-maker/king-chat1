@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>موجة مخصصة - تحكم يدوي بالترددات</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        body {
+            background: #0a0f1e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px;
+            color: #e2e8f0;
+        }
+        .phone {
+            max-width: 460px;
+            width: 100%;
+            background: #111827;
+            border-radius: 48px;
+            padding: 20px 14px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9);
+            border: 1px solid #2d3748;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 8px 0 12px;
+        }
+        .badge {
+            background: #1f2a44;
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 11px;
+            border: 1px solid #3f4e77;
+        }
+        /* تحسين: شريط تنبيهي للمتطلبات */
+        .warning-banner {
+            background: linear-gradient(135deg, #fbbf24, #f97316);
+            padding: 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin: 8px 0;
+            text-align: center;
+            color: #1f1f1f;
+            font-weight: 600;
+        }
+        .visualizer {
+            background: #0f172a;
+            border-radius: 40px;
+            padding: 15px 8px;
+            margin-bottom: 16px;
+        }
+        .wave-row {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            height: 70px;
+        }
+        .wave-bar {
+            width: 8px;
+            height: 20px;
+            background: #334155;
+            border-radius: 8px;
+            transition: height 0.1s, background 0.1s;
+        }
+        .wave-bar.active {
+            background: linear-gradient(to top, #c084fc, #f472b6);
+            box-shadow: 0 0 12px #f472b6;
+        }
+        .freq-labels {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 12px;
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 8px;
+        }
+
+        /* لوحة التحكم المتقدمة */
+        .advanced-panel {
+            background: #1e293b;
+            border-radius: 40px;
+            padding: 18px;
+            margin-bottom: 16px;
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+        }
+        .control-label {
+            font-size: 14px;
+            min-width: 100px;
+        }
+        .control-value {
+            background: #0f172a;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-family: monospace;
+            font-size: 14px;
+            min-width: 80px;
+            text-align: center;
+        }
+        input[type=range] {
+            flex: 1;
+            height: 6px;
+            border-radius: 10px;
+            background: #334155;
+            -webkit-appearance: none;
+            margin: 0 10px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #c084fc;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            background: #e879f9;
+            transform: scale(1.2);
+        }
+        .test-tone-btn {
+            background: #2d3a5e;
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 40px;
+            margin-top: 10px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .test-tone-btn:hover {
+            background: #3d4a7e;
+            transform: translateY(-2px);
+        }
+        .test-tone-btn:active {
+            transform: translateY(0);
+        }
+
+        /* باقي الواجهة */
+        .status-bar {
+            background: #1e293b;
+            border-radius: 40px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .led-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .led {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #6b7280;
+        }
+        .led.listening { background: #22c55e; box-shadow: 0 0 15px #22c55e; animation: pulse-green 1.5s infinite; }
+        .led.sending { background: #eab308; box-shadow: 0 0 15px #eab308; animation: pulse-orange 0.8s infinite; }
+        @keyframes pulse-green { 0% { opacity:1; } 50% { opacity:0.4; } }
+        @keyframes pulse-orange { 0% { transform:scale(1); } 50% { transform:scale(1.3); } }
+
+        .button-grid {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .btn {
+            flex: 1 1 40%;
+            padding: 16px 10px;
+            border: none;
+            border-radius: 40px;
+            font-weight: 700;
+            background: #334155;
+            color: #f1f5f9;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 4px 0 #0f172a;
+        }
+        .btn.primary { background: linear-gradient(145deg, #7c3aed, #c026d3); color: white; box-shadow: 0 4px 0 #5b1e8c; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #0f172a; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .chat-area {
+            background: #1e293b;
+            border-radius: 40px;
+            padding: 18px;
+        }
+        .messages {
+            background: #0f172a;
+            border-radius: 30px;
+            padding: 16px;
+            height: 220px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .message {
+            max-width: 85%;
+            padding: 10px 16px;
+            border-radius: 24px;
+            font-size: 14px;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.sent { background: linear-gradient(145deg, #7c3aed, #a855f7); align-self: flex-end; color: white; }
+        .message.received { background: #2d3a5e; align-self: flex-start; }
+        .message.system { background: #1e2b44; align-self: center; font-size: 12px; color: #94a3b8; }
+        .message img, .message audio { max-width: 100%; border-radius: 12px; margin-top: 6px; }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 16px 20px;
+            border: none;
+            border-radius: 40px;
+            background: #0f172a;
+            color: white;
+            border: 1px solid #334155;
+            transition: 0.2s;
+        }
+        .input-row input:focus {
+            outline: none;
+            border-color: #c084fc;
+            box-shadow: 0 0 10px rgba(192, 132, 252, 0.3);
+        }
+        .input-row button {
+            width: 70px;
+            border-radius: 40px;
+            border: none;
+            background: linear-gradient(145deg, #7c3aed, #c026d3);
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .input-row button:hover {
+            transform: scale(1.05);
+        }
+        .input-row button:active {
+            transform: scale(0.95);
+        }
+
+        .action-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 40px;
+            border: none;
+            background: #28344e;
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .action-btn:hover:not(:disabled) {
+            background: #354561;
+            transform: translateY(-2px);
+        }
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #334155;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #c084fc, #f472b6);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 16px;
+            color: #4b5563;
+            font-size: 10px;
+        }
+        .toggle-advanced {
+            background: #1e293b;
+            border: none;
+            color: #a78bfa;
+            padding: 8px;
+            width: 100%;
+            border-radius: 40px;
+            margin-bottom: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .toggle-advanced:hover {
+            background: #2d3a5e;
+            transform: translateY(-2px);
+        }
+        /* تحسين: عداد الإحصائيات */
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            background: #0f172a;
+            border-radius: 30px;
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: 12px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-label {
+            color: #94a3b8;
+            font-size: 11px;
+        }
+        .stat-value {
+            color: #a78bfa;
+            font-weight: bold;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <div class="header">
+            <h1>🎚️ موجة مخصصة</h1>
+            <div class="badges">
+                <span class="badge">تحكم بالهرتز</span>
+                <span class="badge">صور</span>
+                <span class="badge">صوت</span>
+            </div>
+            <!-- تحسين: شريط تنبيه واضح -->
+            <div class="warning-banner">
+                ⚠️ يحتاج ميكروفون وسماعات جيدة + متصفح حديث
+            </div>
+        </div>
+
+        <!-- Visualizer -->
+        <div class="visualizer">
+            <div class="wave-row" id="waveRow"></div>
+            <div class="freq-labels" id="freqLabels">
+                <span>F0: 19000 Hz</span>
+                <span>F1: 20000 Hz</span>
+            </div>
+        </div>
+
+        <!-- إحصائيات جديدة -->
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-label">الرسائل المرسلة</div>
+                <div class="stat-value" id="sentCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">الرسائل المستقبلة</div>
+                <div class="stat-value" id="receivedCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">الأخطاء</div>
+                <div class="stat-value" id="errorCount">0</div>
+            </div>
+        </div>
+
+        <!-- زر إظهار/إخفاء التحكم المتقدم -->
+        <button class="toggle-advanced" id="toggleAdvancedBtn">⚙️ إظهار التحكم المتقدم</button>
+        <div id="advancedPanel" style="display: none;">
+            <div class="advanced-panel">
+                <div class="control-row">
+                    <span class="control-label">تردد 0 (Hz)</span>
+                    <input type="range" id="freq0Slider" min="16000" max="22000" step="100" value="19000">
+                    <span class="control-value" id="freq0Value">19000</span>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">تردد 1 (Hz)</span>
+                    <input type="range" id="freq1Slider" min="16000" max="22000" step="100" value="20000">
+                    <span class="control-value" id="freq1Value">20000</span>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">مدة البت (ms)</span>
+                    <input type="range" id="bitDurationSlider" min="4" max="20" step="1" value="8">
+                    <span class="control-value" id="bitDurationValue">8 ms</span>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">عتبة الكشف</span>
+                    <input type="range" id="thresholdSlider" min="0.005" max="0.05" step="0.001" value="0.015">
+                    <span class="control-value" id="thresholdValue">0.015</span>
+                </div>
+                <button class="test-tone-btn" id="testToneBtn">🔊 اختبار التردد 0 (نغمة مستمرة)</button>
+            </div>
+        </div>
+
+        <!-- شريط الحالة -->
+        <div class="status-bar">
+            <span>📡 الحالة</span>
+            <div class="led-indicator">
+                <span id="statusText">خامل</span>
+                <span class="led" id="led"></span>
+            </div>
+        </div>
+
+        <!-- أزرار التحكم الأساسية -->
+        <div class="button-grid">
+            <button class="btn primary" id="startBtn">▶️ استماع</button>
+            <button class="btn" id="stopBtn">⏹️ إيقاف</button>
+            <button class="btn" id="testBtn">🔊 اختبار رسالة</button>
+            <button class="btn" id="clearBtn">🗑️ مسح</button>
+        </div>
+
+        <!-- شريط التقدم -->
+        <div class="progress-bar" id="progressContainer" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- منطقة الدردشة -->
+        <div class="chat-area">
+            <div class="messages" id="messages">
+                <div class="message system">✨ اضبط الترددات ثم ابدأ الاستماع.</div>
+            </div>
+            <div class="input-row">
+                <input type="text" id="messageInput" placeholder="رسالة نصية...">
+                <button id="sendBtn">➡️</button>
+            </div>
+            <div class="action-row">
+                <button class="action-btn" id="attachImageBtn">📷 صورة</button>
+                <button class="action-btn" id="recordBtn">🎤 تسجيل</button>
+                <button class="action-btn" id="sendAudioBtn" disabled>⏳ سجل أولاً</button>
+            </div>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        </div>
+
+        <div class="footer">
+            ⚡ اضبط الترددات حسب جهازك • ازرار للمس • بدون إنترنت • v1.1
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        // محرك الموجات فوق الصوتية مع تحكم يدوي كامل بالمعاملات
+        // تم التحسين: إضافة معالجة الأخطاء + عدادات إحصائية + تحسينات الأداء
+        // ================================================================
+
+        (function() {
+            // -------------------- عناصر واجهة التحكم --------------------
+            const toggleAdvancedBtn = document.getElementById('toggleAdvancedBtn');
+            const advancedPanel = document.getElementById('advancedPanel');
+            const freq0Slider = document.getElementById('freq0Slider');
+            const freq1Slider = document.getElementById('freq1Slider');
+            const bitDurationSlider = document.getElementById('bitDurationSlider');
+            const thresholdSlider = document.getElementById('thresholdSlider');
+            const freq0Value = document.getElementById('freq0Value');
+            const freq1Value = document.getElementById('freq1Value');
+            const bitDurationValue = document.getElementById('bitDurationValue');
+            const thresholdValue = document.getElementById('thresholdValue');
+            const testToneBtn = document.getElementById('testToneBtn');
+            const freqLabels = document.getElementById('freqLabels');
+
+            // العدادات الإحصائية
+            let sentCount = 0;
+            let receivedCount = 0;
+            let errorCount = 0;
+
+            // متغيرات الإعدادات القابلة للتعديل
+            let CONFIG = {
+                FREQ_0: 19000,
+                FREQ_1: 20000,
+                BIT_DURATION: 0.008,  // 8 ms
+                THRESHOLD: 0.015,
+                PREAMBLE: [0xAA, 0x55, 0xAA, 0x55, 0xAA],
+                SAMPLE_RATE: 48000,
+                FFT_SIZE: 4096,
+                REPETITION: 2,
+                CHUNK_SIZE: 200,
+                MAX_RETRY: 5,
+                TIMEOUT: 8000,
+                AUDIO_MAX_DURATION: 30,
+            };
+
+            // تحديث القيم المعروضة عند تغيير السلايدر
+            function updateConfigFromSliders() {
+                CONFIG.FREQ_0 = parseInt(freq0Slider.value, 10);
+                CONFIG.FREQ_1 = parseInt(freq1Slider.value, 10);
+                CONFIG.BIT_DURATION = parseInt(bitDurationSlider.value, 10) / 1000; // تحويل ms إلى ثوان
+                CONFIG.THRESHOLD = parseFloat(thresholdSlider.value);
+
+                freq0Value.textContent = CONFIG.FREQ_0;
+                freq1Value.textContent = CONFIG.FREQ_1;
+                bitDurationValue.textContent = bitDurationSlider.value + ' ms';
+                thresholdValue.textContent = CONFIG.THRESHOLD.toFixed(3);
+                freqLabels.innerHTML = `<span>F0: ${CONFIG.FREQ_0} Hz</span> <span>F1: ${CONFIG.FREQ_1} Hz</span>`;
+            }
+
+            freq0Slider.addEventListener('input', updateConfigFromSliders);
+            freq1Slider.addEventListener('input', updateConfigFromSliders);
+            bitDurationSlider.addEventListener('input', updateConfigFromSliders);
+            thresholdSlider.addEventListener('input', updateConfigFromSliders);
+
+            toggleAdvancedBtn.addEventListener('click', () => {
+                if (advancedPanel.style.display === 'none') {
+                    advancedPanel.style.display = 'block';
+                    toggleAdvancedBtn.textContent = '🔽 إخفاء التحكم المتقدم';
+                } else {
+                    advancedPanel.style.display = 'none';
+                    toggleAdvancedBtn.textContent = '⚙️ إظهار التحكم المتقدم';
+                }
+            });
+
+            // -------------------- عناصر DOM الأخرى --------------------
+            const messagesDiv = document.getElementById('messages');
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const testBtn = document.getElementById('testBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const attachImageBtn = document.getElementById('attachImageBtn');
+            const recordBtn = document.getElementById('recordBtn');
+            const sendAudioBtn = document.getElementById('sendAudioBtn');
+            const imageInput = document.getElementById('imageInput');
+            const statusText = document.getElementById('statusText');
+            const led = document.getElementById('led');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const waveRow = document.getElementById('waveRow');
+            const sentCountEl = document.getElementById('sentCount');
+            const receivedCountEl = document.getElementById('receivedCount');
+            const errorCountEl = document.getElementById('errorCount');
+
+            // إنشاء أشرطة الموجة
+            for (let i = 0; i < 14; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'wave-bar';
+                waveRow.appendChild(bar);
+            }
+            const waveBars = document.querySelectorAll('.wave-bar');
+
+            // -------------------- متغيرات الصوت والاستقبال --------------------
+            let audioContext = null;
+            let isListening = false;
+            let isSending = false;
+            let sourceNode = null;
+            let analyserNode = null;
+            let mediaStream = null;
+
+            // متغيرات الاستقبال
+            let receivedBits = '';
+            let preambleDetected = false;
+            let expectedLength = 0;
+            let dataBytes = [];
+            let bitCount = 0;
+            let currentByte = 0;
+            let lastBitTime = 0;
+
+            // بروتوكول الملفات
+            let currentTransferId = null;
+            let totalChunks = 0;
+            let receivedChunks = new Map();
+            let transferType = '';
+            let transferMetadata = {};
+
+            // التسجيل الصوتي
+            let mediaRecorder = null;
+            let audioChunks = [];
+            let recordedBlob = null;
+            let isRecording = false;
+
+            // -------------------- دوال مساعدة --------------------
+            function setStatus(text, ledClass) {
+                statusText.innerText = text;
+                led.className = 'led ' + ledClass;
+            }
+
+            function addMessage(text, type = 'received', isHtml = false) {
+                const msg = document.createElement('div');
+                msg.classList.add('message', type);
+                if (isHtml) msg.innerHTML = text;
+                else msg.textContent = text;
+                messagesDiv.appendChild(msg);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+
+            function updateWaveBars(energy) {
+                const activeCount = Math.floor(energy * waveBars.length);
+                waveBars.forEach((bar, i) => {
+                    if (i < activeCount) {
+                        bar.style.height = 30 + energy * 50 + 'px';
+                        bar.classList.add('active');
+                    } else {
+                        bar.style.height = '20px';
+                        bar.classList.remove('active');
+                    }
+                });
+            }
+
+            // تحديث العدادات
+            function updateStats() {
+                sentCountEl.textContent = sentCount;
+                receivedCountEl.textContent = receivedCount;
+                errorCountEl.textContent = errorCount;
+            }
+
+            async function initAudio() {
+                if (audioContext) return audioContext;
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioContext.state === 'suspended') await audioContext.resume();
+                    return audioContext;
+                } catch (err) {
+                    console.error('خطأ في تهيئة Audio Context:', err);
+                    errorCount++;
+                    updateStats();
+                    throw err;
+                }
+            }
+
+            // -------------------- إرسال نغمة اختبار (تردد 0) --------------------
+            testToneBtn.addEventListener('click', async () => {
+                try {
+                    const ctx = await initAudio();
+                    const duration = 2; // ثانيتين
+                    const samples = duration * CONFIG.SAMPLE_RATE;
+                    const buffer = ctx.createBuffer(1, samples, CONFIG.SAMPLE_RATE);
+                    const channel = buffer.getChannelData(0);
+                    const omega = 2 * Math.PI * CONFIG.FREQ_0 / CONFIG.SAMPLE_RATE;
+                    for (let i = 0; i < samples; i++) {
+                        // نافذة هان لتجنب النقرات
+                        let windowFactor = 1;
+                        if (i < samples * 0.05) windowFactor = 0.5 * (1 - Math.cos(2 * Math.PI * i / (samples * 0.05)));
+                        else if (i > samples * 0.95) windowFactor = 0.5 * (1 - Math.cos(2 * Math.PI * (samples - i - 1) / (samples * 0.05)));
+                        channel[i] = Math.sin(omega * i) * windowFactor * 0.8;
+                    }
+                    const source = ctx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(ctx.destination);
+                    source.start();
+                    addMessage(`🔊 اختبار تردد ${CONFIG.FREQ_0} Hz (لمدة ثانيتين)`, 'system');
+                } catch (err) {
+                    console.error('خطأ في اختبار النغمة:', err);
+                    errorCount++;
+                    updateStats();
+                    addMessage('❌ خطأ في اختبار النغمة', 'system');
+                }
+            });
+
+            // -------------------- تحويل البيانات إلى موجات --------------------
+            function encodeBytesToFrame(bytes) {
+                let frame = [...CONFIG.PREAMBLE];
+                frame.push(bytes.length);
+                for (let b of bytes) {
+                    for (let r = 0; r < CONFIG.REPETITION; r++) frame.push(b);
+                }
+                let checksum = bytes.length;
+                for (let b of bytes) checksum ^= b;
+                frame.push(checksum);
+                return frame;
+            }
+
+            function createWaveform(bytes) {
+                try {
+                    const bits = [];
+                    for (let byte of bytes) {
+                        for (let i = 7; i >= 0; i--) bits.push((byte >> i) & 1);
+                    }
+
+                    const samplesPerBit = Math.floor(CONFIG.SAMPLE_RATE * CONFIG.BIT_DURATION);
+                    const totalSamples = bits.length * samplesPerBit;
+                    const audioBuffer = audioContext.createBuffer(1, totalSamples, CONFIG.SAMPLE_RATE);
+                    const channel = audioBuffer.getChannelData(0);
+
+                    const hanning = (i, len) => 0.5 * (1 - Math.cos(2 * Math.PI * i / (len - 1)));
+
+                    let idx = 0;
+                    for (let bit of bits) {
+                        const freq = bit ? CONFIG.FREQ_1 : CONFIG.FREQ_0;
+                        const omega = 2 * Math.PI * freq / CONFIG.SAMPLE_RATE;
+                        for (let s = 0; s < samplesPerBit; s++) {
+                            let windowFactor = 1;
+                            if (s < samplesPerBit * 0.1) windowFactor = hanning(s, samplesPerBit * 0.1);
+                            else if (s > samplesPerBit * 0.9) windowFactor = hanning(samplesPerBit - s - 1, samplesPerBit * 0.1);
+                            channel[idx++] = Math.sin(omega * s) * windowFactor * 0.9;
+                        }
+                    }
+                    return audioBuffer;
+                } catch (err) {
+                    console.error('خطأ في إنشاء الموجة:', err);
+                    errorCount++;
+                    updateStats();
+                    throw err;
+                }
+            }
+
+            async function sendBytes(bytes, desc = 'بيانات') {
+                if (isSending) {
+                    addMessage('⚠️ هناك إرسال جاري، انتظر', 'system');
+                    return;
+                }
+                isSending = true;
+                setStatus('جاري الإرسال...', 'sending');
+
+                try {
+                    const ctx = await initAudio();
+                    const buffer = createWaveform(bytes);
+                    const source = ctx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(ctx.destination);
+                    source.start();
+
+                    const durationMs = (buffer.length / CONFIG.SAMPLE_RATE) * 1000;
+                    const startTime = Date.now();
+
+                    const interval = setInterval(() => {
+                        const elapsed = Date.now() - startTime;
+                        const prog = Math.min(1, elapsed / durationMs);
+                        updateWaveBars(prog);
+                        if (prog >= 1) {
+                            clearInterval(interval);
+                            updateWaveBars(0);
+                            isSending = false;
+                            setStatus('في الاستماع', 'listening');
+                        }
+                    }, 50);
+
+                    source.onended = () => {
+                        clearInterval(interval);
+                        updateWaveBars(0);
+                        isSending = false;
+                        setStatus('في الاستماع', 'listening');
+                    };
+                } catch (err) {
+                    console.error('خطأ في الإرسال:', err);
+                    isSending = false;
+                    errorCount++;
+                    updateStats();
+                    setStatus('خطأ في الإرسال', '');
+                    addMessage('❌ خطأ في الإرسال: ' + err.message, 'system');
+                }
+            }
+
+            // إرسال رسالة نصية
+            async function sendText(text) {
+                try {
+                    const encoder = new TextEncoder();
+                    const bytes = encoder.encode(text);
+                    const frame = encodeBytesToFrame(bytes);
+                    await sendBytes(frame, 'نص');
+                    addMessage(text, 'sent');
+                    sentCount++;
+                    updateStats();
+                } catch (err) {
+                    console.error('خطأ في إرسال النص:', err);
+                    errorCount++;
+                    updateStats();
+                    addMessage('❌ خطأ في إرسال الرسالة', 'system');
+                }
+            }
+
+            // -------------------- إرسال الصور --------------------
+            async function sendImage(file) {
+                try {
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        try {
+                            const base64 = e.target.result.split(',')[1];
+                            const chunkSize = CONFIG.CHUNK_SIZE;
+                            const totalChunks = Math.ceil(base64.length / chunkSize);
+                            const transferId = Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+
+                            addMessage(`🖼️ بدء إرسال صورة: ${file.name} (${totalChunks} جزء)`, 'system');
+
+                            const meta = JSON.stringify({
+                                type: 'image',
+                                id: transferId,
+                                name: file.name,
+                                mime: file.type,
+                                size: base64.length,
+                                chunks: totalChunks
+                            });
+                            const metaBytes = new TextEncoder().encode('META:' + meta);
+                            await sendBytes(encodeBytesToFrame(metaBytes), 'metadata');
+
+                            progressContainer.style.display = 'block';
+                            for (let i = 0; i < totalChunks; i++) {
+                                const chunk = base64.substr(i * chunkSize, chunkSize);
+                                const chunkData = `CHUNK:${transferId}:${i}:${chunk}`;
+                                const chunkBytes = new TextEncoder().encode(chunkData);
+                                await sendBytes(encodeBytesToFrame(chunkBytes), `جزء ${i+1}/${totalChunks}`);
+                                progressFill.style.width = ((i + 1) / totalChunks * 100) + '%';
+                                await new Promise(r => setTimeout(r, 300));
+                            }
+                            progressContainer.style.display = 'none';
+                            addMessage('✅ تم إرسال الصورة', 'system');
+                            sentCount++;
+                            updateStats();
+                        } catch (err) {
+                            console.error('خطأ في معالجة الصورة:', err);
+                            errorCount++;
+                            updateStats();
+                            addMessage('❌ خطأ في إرسال الصورة', 'system');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } catch (err) {
+                    console.error('خطأ في قراءة الصورة:', err);
+                    errorCount++;
+                    updateStats();
+                }
+            }
+
+            // -------------------- التسجيل الصوتي --------------------
+            async function startRecording() {
+                if (isRecording) return;
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        sendAudioBtn.disabled = false;
+                        addMessage(`🎤 تم تسجيل ${(recordedBlob.size / 1024).toFixed(1)} كيلوبايت`, 'system');
+                        stream.getTracks().forEach(t => t.stop());
+                    };
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordBtn.textContent = '⏹️ إيقاف التسجيل';
+                    recordBtn.style.background = '#dc2626';
+                } catch (err) {
+                    console.error('خطأ في الميكروفون:', err);
+                    errorCount++;
+                    updateStats();
+                    alert('❌ لا يمكن الوصول للميكروفون: ' + err.message + '\n تأكد من إعطاء الإذن.');
+                }
+            }
+
+            function stopRecording() {
+                if (mediaRecorder && isRecording) {
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    recordBtn.textContent = '🎤 تسجيل';
+                    recordBtn.style.background = '';
+                }
+            }
+
+            async function sendAudio() {
+                if (!recordedBlob) return;
+                try {
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        try {
+                            const base64 = e.target.result.split(',')[1];
+                            const chunkSize = CONFIG.CHUNK_SIZE;
+                            const totalChunks = Math.ceil(base64.length / chunkSize);
+                            const transferId = Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+
+                            addMessage(`🎵 بدء إرسال رسالة صوتية (${totalChunks} جزء)`, 'system');
+
+                            const meta = JSON.stringify({
+                                type: 'audio',
+                                id: transferId,
+                                duration: recordedBlob.size / 16000 / 2,
+                                chunks: totalChunks
+                            });
+                            const metaBytes = new TextEncoder().encode('META:' + meta);
+                            await sendBytes(encodeBytesToFrame(metaBytes), 'audio meta');
+
+                            progressContainer.style.display = 'block';
+                            for (let i = 0; i < totalChunks; i++) {
+                                const chunk = base64.substr(i * chunkSize, chunkSize);
+                                const chunkData = `CHUNK:${transferId}:${i}:${chunk}`;
+                                const chunkBytes = new TextEncoder().encode(chunkData);
+                                await sendBytes(encodeBytesToFrame(chunkBytes), `audio part ${i+1}`);
+                                progressFill.style.width = ((i + 1) / totalChunks * 100) + '%';
+                                await new Promise(r => setTimeout(r, 300));
+                            }
+                            progressContainer.style.display = 'none';
+                            addMessage('✅ تم إرسال الرسالة الصوتية', 'system');
+                            recordedBlob = null;
+                            sendAudioBtn.disabled = true;
+                            sentCount++;
+                            updateStats();
+                        } catch (err) {
+                            console.error('خطأ في إرسال الصوت:', err);
+                            errorCount++;
+                            updateStats();
+                            addMessage('❌ خطأ في إرسال الصوت', 'system');
+                        }
+                    };
+                    reader.readAsDataURL(recordedBlob);
+                } catch (err) {
+                    console.error('خطأ في معالجة الصوت:', err);
+                    errorCount++;
+                    updateStats();
+                }
+            }
+
+            // -------------------- الاستقبال --------------------
+            async function startListening() {
+                if (isListening) return;
+                try {
+                    const ctx = await initAudio();
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaStream = stream;
+                    sourceNode = ctx.createMediaStreamSource(stream);
+                    analyserNode = ctx.createAnalyser();
+                    analyserNode.fftSize = CONFIG.FFT_SIZE;
+                    const bufferLength = analyserNode.frequencyBinCount;
+                    const dataArray = new Float32Array(bufferLength);
+                    sourceNode.connect(analyserNode);
+
+                    function detectLoop() {
+                        if (!isListening) return;
+                        try {
+                            analyserNode.getFloatFrequencyData(dataArray);
+
+                            const power = new Float32Array(bufferLength);
+                            for (let i = 0; i < bufferLength; i++) {
+                                power[i] = Math.pow(10, dataArray[i] / 20);
+                            }
+
+                            const bin0 = Math.round(CONFIG.FREQ_0 * CONFIG.FFT_SIZE / CONFIG.SAMPLE_RATE);
+                            const bin1 = Math.round(CONFIG.FREQ_1 * CONFIG.FFT_SIZE / CONFIG.SAMPLE_RATE);
+                            const e0 = power[bin0] || 0;
+                            const e1 = power[bin1] || 0;
+                            const maxE = Math.max(e0, e1, 1e-10);
+                            const norm0 = e0 / maxE;
+                            const norm1 = e1 / maxE;
+
+                            updateWaveBars(maxE * 2);
+
+                            if (norm0 > CONFIG.THRESHOLD || norm1 > CONFIG.THRESHOLD) {
+                                const bit = norm1 > norm0 ? 1 : 0;
+                                processBit(bit);
+                            }
+                        } catch (err) {
+                            console.error('خطأ في حلقة الكشف:', err);
+                        }
+
+                        requestAnimationFrame(detectLoop);
+                    }
+
+                    isListening = true;
+                    setStatus('في الاستماع', 'listening');
+                    detectLoop();
+                } catch (err) {
+                    console.error('خطأ في الاستماع:', err);
+                    errorCount++;
+                    updateStats();
+                    alert('❌ لا يمكن الوصول للميكروفون: ' + err.message + '\n تأكد من إعطاء الإذن.');
+                }
+            }
+
+            function stopListening() {
+                isListening = false;
+                if (sourceNode) sourceNode.disconnect();
+                if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+                setStatus('خامل', '');
+                updateWaveBars(0);
+            }
+
+            function processBit(bit) {
+                const now = Date.now();
+                if (now - lastBitTime < CONFIG.BIT_DURATION * 1000 * 0.5) return;
+                lastBitTime = now;
+
+                receivedBits += bit;
+
+                if (!preambleDetected && receivedBits.length >= 40) {
+                    for (let i = 0; i <= receivedBits.length - 40; i++) {
+                        const b1 = parseInt(receivedBits.substr(i, 8), 2);
+                        const b2 = parseInt(receivedBits.substr(i+8, 8), 2);
+                        const b3 = parseInt(receivedBits.substr(i+16, 8), 2);
+                        const b4 = parseInt(receivedBits.substr(i+24, 8), 2);
+                        const b5 = parseInt(receivedBits.substr(i+32, 8), 2);
+                        if (b1 === 0xAA && b2 === 0x55 && b3 === 0xAA && b4 === 0x55 && b5 === 0xAA) {
+                            preambleDetected = true;
+                            receivedBits = receivedBits.substr(i+40);
+                            bitCount = 0;
+                            currentByte = 0;
+                            dataBytes = [];
+                            expectedLength = 0;
+                            break;
+                        }
+                    }
+                    return;
+                }
+
+                if (preambleDetected) {
+                    currentByte = (currentByte << 1) | bit;
+                    bitCount++;
+
+                    if (bitCount === 8) {
+                        if (expectedLength === 0) {
+                            expectedLength = currentByte;
+                        } else if (dataBytes.length < expectedLength * CONFIG.REPETITION) {
+                            dataBytes.push(currentByte);
+                        } else {
+                            const receivedChecksum = currentByte;
+
+                            let uniqueBytes = [];
+                            for (let i = 0; i < dataBytes.length; i += CONFIG.REPETITION) {
+                                uniqueBytes.push(dataBytes[i]);
+                            }
+
+                            let calcChecksum = expectedLength;
+                            for (let b of uniqueBytes) calcChecksum ^= b;
+
+                            if (calcChecksum === receivedChecksum) {
+                                try {
+                                    const text = new TextDecoder().decode(new Uint8Array(uniqueBytes));
+                                    handleReceivedMessage(text);
+                                    receivedCount++;
+                                    updateStats();
+                                } catch (err) {
+                                    console.error('خطأ في فك تشفير الرسالة:', err);
+                                    errorCount++;
+                                    updateStats();
+                                    addMessage('⚠️ خطأ في فك التشفير', 'system');
+                                }
+                            } else {
+                                addMessage('⚠️ خطأ في checksum', 'system');
+                                errorCount++;
+                                updateStats();
+                            }
+
+                            preambleDetected = false;
+                            expectedLength = 0;
+                        }
+                        bitCount = 0;
+                        currentByte = 0;
+                    }
+                }
+            }
+
+            function handleReceivedMessage(text) {
+                if (text.startsWith('META:')) {
+                    try {
+                        const meta = JSON.parse(text.substring(5));
+                        currentTransferId = meta.id;
+                        totalChunks = meta.chunks;
+                        transferType = meta.type;
+                        transferMetadata = meta;
+                        receivedChunks.clear();
+                        addMessage(`📥 استقبال ${meta.type === 'image' ? 'صورة' : 'رسالة صوتية'} (${meta.chunks} جزء)`, 'system');
+                        progressContainer.style.display = 'block';
+                        progressFill.style.width = '0%';
+                    } catch (err) {
+                        console.error('خطأ في معالجة البيانات الوصفية:', err);
+                        errorCount++;
+                        updateStats();
+                        addMessage('⚠️ خطأ في البيانات الوصفية', 'system');
+                    }
+                } else if (text.startsWith('CHUNK:')) {
+                    try {
+                        const parts = text.split(':');
+                        const transferId = parts[1];
+                        const chunkIdx = parseInt(parts[2], 10);
+                        const chunkData = parts.slice(3).join(':');
+
+                        if (transferId === currentTransferId) {
+                            receivedChunks.set(chunkIdx, chunkData);
+                            progressFill.style.width = (receivedChunks.size / totalChunks * 100) + '%';
+
+                            if (receivedChunks.size === totalChunks) {
+                                let fullData = '';
+                                for (let i = 0; i < totalChunks; i++) fullData += receivedChunks.get(i);
+                                if (transferType === 'image') {
+                                    const imgHtml = `<img src="data:${transferMetadata.mime};base64,${fullData}" style="max-width:200px;">`;
+                                    addMessage(imgHtml, 'received', true);
+                                } else if (transferType === 'audio') {
+                                    const audioHtml = `<audio controls src="data:audio/webm;base64,${fullData}" style="width:100%;"></audio>`;
+                                    addMessage(audioHtml, 'received', true);
+                                }
+                                progressContainer.style.display = 'none';
+                                currentTransferId = null;
+                            }
+                        }
+                    } catch (err) {
+                        console.error('خطأ في معالجة الجزء:', err);
+                        errorCount++;
+                        updateStats();
+                        addMessage('⚠️ خطأ في استقبال الجزء', 'system');
+                    }
+                } else {
+                    addMessage(text, 'received');
+                }
+            }
+
+            // -------------------- ربط الأزرار --------------------
+            startBtn.addEventListener('click', startListening);
+            stopBtn.addEventListener('click', stopListening);
+            testBtn.addEventListener('click', async () => await sendText('🔊 اختبار الموجات'));
+            clearBtn.addEventListener('click', () => {
+                messagesDiv.innerHTML = '';
+                addMessage('✨ تم مسح المحادثة', 'system');
+            });
+            sendBtn.addEventListener('click', async () => {
+                const text = messageInput.value.trim();
+                if (!text) return;
+                messageInput.value = '';
+                await sendText(text);
+            });
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendBtn.click();
+            });
+            attachImageBtn.addEventListener('click', () => imageInput.click());
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files[0]) sendImage(e.target.files[0]);
+                imageInput.value = '';
+            });
+            recordBtn.addEventListener('click', () => {
+                if (isRecording) stopRecording();
+                else startRecording();
+            });
+            sendAudioBtn.addEventListener('click', sendAudio);
+
+            window.addEventListener('beforeunload', () => {
+                stopListening();
+                if (isRecording) stopRecording();
+            });
+
+            document.body.addEventListener('click', async () => {
+                if (!audioContext) await initAudio();
+            }, { once: true });
+
+            setStatus('خامل', '');
+            updateStats();
+        })();
+    </script>
+</body>
+</html>
